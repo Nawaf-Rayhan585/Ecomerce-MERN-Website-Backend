@@ -110,6 +110,7 @@ await CartModel.deleteMany({userID:user_id});
 let PaymentSettings=await PaymentSettingModel.find();
 
 
+
     const form=new FormData();
     form.append('store_id',PaymentSettings[0]['store_id'])
     form.append('store_passwd',PaymentSettings[0]['store_passwd'])
@@ -137,7 +138,7 @@ let PaymentSettings=await PaymentSettingModel.find();
     form.append('ship_name',Profile[0]['ship_name'])
     form.append('ship_add1',Profile[0]['ship_add'])
     form.append('ship_add2',Profile[0]['ship_add'])
-    form.append('ship_city',Profile[0]['ship_city'])
+    form.append('ship_city',Profile[0]['ship_city'])    
     form.append('ship_state',Profile[0]['ship_state'])
     form.append('ship_country',Profile[0]['ship_country']),
     form.append('ship_postcode',Profile[0]['ship_postcode'])
@@ -149,24 +150,25 @@ let PaymentSettings=await PaymentSettingModel.find();
 
     let SSLRes = await axios.post(PaymentSettings[0]['init_url'],form)
 
-
-    console.log(form)
     return {status:'success',data:SSLRes.data}
 
 }
 
-
 const PaymentSuccessService = async (req)=>{
     try{
-        let trx_id = req.params
+        let trxID=req.params.trxID;
+        await  InvoiceModel.updateOne({tran_id:trxID},{payment_status:"success"});
         return {status:"success"}
     }catch (e) {
+        console.log('success error' , e)
         return {status:"fail", message:"Something Went Wrong"}
     }
 }
 
 const PaymentFailService = async (req)=>{
     try{
+        let trxID=req.params.trxID;
+        await  InvoiceModel.updateOne({tran_id:trxID},{payment_status:"fail"});
         return {status:"fail"}
     }catch (e) {
         return {status:"fail", message:"Something Went Wrong"}
@@ -175,46 +177,59 @@ const PaymentFailService = async (req)=>{
 
 const PaymentCancelService = async (req)=>{
     try{
+        let trxID=req.params.trxID;
+        await  InvoiceModel.updateOne({tran_id:trxID},{payment_status:"cancel"});
         return {status:"cancel"}
     }catch (e) {
         return {status:"fail", message:"Something Went Wrong"}
     }
 }
 
-
-
-
-
 const PaymentIPNService = async (req)=>{
     try{
+
+        let trxID=req.params.trxID;
+        let status = req.body['status']
+        await InvoiceModel.updateOne({tran_id:trxID},{payment_status:status});
         return {status:"success"}
     }catch (e) {
         return {status:"fail", message:"Something Went Wrong"}
     }
 }
 
-
-
-
-
 const InvoiceListService = async (req)=>{
     try{
-        let user_id=req.headers.user_id;
 
+        let user_id = req.headers.user_id
+        let invoices = await InvoiceModel.find({userID:user_id});
+        return {status:'success', invoices: invoices}
     }catch (e) {
         return {status:"fail", message:"Something Went Wrong"}
     }
 }
 
-
-
 const InvoiceProductListService = async (req)=>{
-   try{
+    try{
+
+        let user_id=new ObjectID(req.headers.user_id);
+        let invoice_id=new ObjectID(req.params.invoice_id);
+
+        let matchStage={$match:{userID:user_id,invoiceID:invoice_id}}
+        let JoinStageProduct={$lookup:{from:"products",localField:"productID",foreignField:"_id",as:"product"}}
+        let unwindStage={$unwind:"$product"}
+
+        let products=await InvoiceProductModel.aggregate([
+            matchStage,
+            JoinStageProduct,
+            unwindStage
+        ])
+
 
         return {status:"success",data: products}
     }catch (e) {
         return {status:"fail", message:"Something Went Wrong"}
     }
+
 }
 
 

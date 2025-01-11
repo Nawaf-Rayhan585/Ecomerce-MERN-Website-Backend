@@ -13,14 +13,15 @@ const UserOTPService = async (req) => {
         let EmailText = `Your Verification Code Is : ${code}`
         let EmailSubject = `Email Verification`
 
-
-        await EmailSend(email, EmailText , EmailSubject)
+        
+        let EmailSender = await EmailSend(email, EmailSubject , EmailText)
+        console.log(EmailSender)
 
         await UserModel.updateOne({ email: email} ,{$set:{otp:code}} , {upsert:true});
         return {status: 'success' ,  message:'6 digits OTP Has Been Send'}
 
     } catch (e) {
-        return {status: 'fail' ,  message:'Something went wrong'}
+        return {status: 'fail' ,  message:e}
     }
 
 }

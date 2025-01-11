@@ -10,7 +10,9 @@ exports.CreateInvoice=async(req,res)=>{
 
 
 exports.PaymentSuccess=async (req, res) => {
+
     let result=await PaymentSuccessService(req);
+    console.log(res)
     return res.redirect('/orders');
 }
 
