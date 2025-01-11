@@ -12,6 +12,7 @@ const cors =require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose =require('mongoose');
 const path = require("path");
+require('dotenv').config();
 
 
 
@@ -19,8 +20,7 @@ const path = require("path");
 
 
 
-
-let URL="mongodb+srv://admin:123code@mydb.8vxusno.mongodb.net/MernEcommerce"
+let URL = process.env.MONGO_URL
 mongoose.connect(URL).then((res)=>{
     console.log("Database Connected")
 }).catch((err)=>{
